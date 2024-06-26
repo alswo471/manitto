@@ -51,8 +51,4 @@ def index():
         assignments = assign_manito(participants)
     return render_template_string(HTML_TEMPLATE, assignments=assignments)
 
-# WSGI 애플리케이션 정의
-app = app
-
-if __name__ == '__main__':
-    app.run("0.0.0.0")
+app.run("0.0.0.0")
