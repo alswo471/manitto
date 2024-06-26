@@ -40,16 +40,8 @@ def assign_manito(participants):
         manito_assignments[participants[i]] = shuffled[i]
     return manito_assignments
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    return 'Hello, World!'
-
-@app.route('/about')
-def about():
-    return 'About'
-
-@app.route('/manito', methods=['GET', 'POST'])
-def manito():
     assignments = None
     if request.method == 'POST':
         participants = request.form['participants'].split(',')
