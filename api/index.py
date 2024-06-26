@@ -1,4 +1,3 @@
-
 from flask import Flask, request, render_template_string
 import random
 
@@ -14,6 +13,9 @@ participants_info = {
     '정은지': '126'
 }
 
+# 남은 참가자 리스트 (마니또 추첨에 사용)
+remaining_participants = list(participants_info.keys())
+
 # HTML 템플릿
 HTML_TEMPLATE_AUTHENTICATED = """
 <!doctype html>
@@ -25,7 +27,16 @@ HTML_TEMPLATE_AUTHENTICATED = """
   <body>
     <h1>마니또 추첨기</h1>
     <h2>안녕하세요, {{ name }}님!</h2>
-    <h3>당신의 마니또는 {{ manito }}입니다.</h3>
+    {% if manito %}
+      <h3>당신의 마니또는 {{ manito }}입니다.</h3>
+    {% else %}
+      <h3>모든 마니또가 추첨되었습니다.</h3>
+    {% endif %}
+    <form method="POST" action="/draw">
+      <input type="hidden" name="name" value="{{ name }}">
+      <input type="hidden" name="password" value="{{ password }}">
+      <input type="submit" value="다시 뽑기">
+    </form>
   </body>
 </html>
 """
@@ -39,7 +50,7 @@ HTML_TEMPLATE_NOT_AUTHENTICATED = """
   </head>
   <body>
     <h1>마니또 추첨기</h1>
-    <form method="POST">
+    <form method="POST" action="/">
       <label for="name">이름:</label><br>
       <input type="text" id="name" name="name" required><br><br>
       <label for="password">패스워드:</label><br>
@@ -53,11 +64,10 @@ HTML_TEMPLATE_NOT_AUTHENTICATED = """
 </html>
 """
 
-def assign_manito(name):
-    participants = list(participants_info.keys())
-    participants.remove(name)
-    manito_candidates = [p for p in participants if p != participants_info.get(name)]
-    return random.choice(manito_candidates)
+def assign_manito():
+    if remaining_participants:
+        return remaining_participants.pop(random.randint(0, len(remaining_participants) - 1))
+    return None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -68,11 +78,27 @@ def index():
 
             # 인증 확인
             if name in participants_info and participants_info[name] == password:
-                manito = assign_manito(name)
-                return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
+                manito = assign_manito()
+                return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito, password=password)
             else:
                 error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
                 return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
+
+    return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED)
+
+@app.route('/draw', methods=['POST'])
+def draw():
+    if 'name' in request.form and 'password' in request.form:
+        name = request.form['name']
+        password = request.form['password']
+
+        # 인증 확인
+        if name in participants_info and participants_info[name] == password:
+            manito = assign_manito()
+            return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito, password=password)
+        else:
+            error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
+            return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
 
     return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED)
 
