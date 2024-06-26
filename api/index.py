@@ -81,7 +81,7 @@ def index():
                 manito = assign_manito()
                 return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito, password=password)
             else:
-                error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
+                error = '비번 똑바로 입력해 새끼야.'
                 return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
 
     return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED)
@@ -97,7 +97,7 @@ def draw():
             manito = assign_manito()
             return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito, password=password)
         else:
-            error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
+            error = '비번 똑바로 입력해 새끼야.'
             return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
 
     return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED)
