@@ -1,3 +1,4 @@
+
 from flask import Flask, request, render_template_string
 import random
 
@@ -11,16 +12,6 @@ participants_info = {
     '정예은': '124',
     '김수민': '125',
     '정은지': '126'
-}
-
-# 초기 고정적인 마니또 할당
-initial_manitos = {
-    '지민재': '김수민',
-    '윤석환': '정은지',
-    '박준성': '정예은',
-    '정예은': '지민재',
-    '김수민': '박준성',
-    '정은지': '윤석환'
 }
 
 # HTML 템플릿
@@ -62,26 +53,17 @@ HTML_TEMPLATE_NOT_AUTHENTICATED = """
 </html>
 """
 
-# 초기 고정된 마니또 할당을 사용했는지 확인하는 플래그
-initial_pairings_used = False
-
 def assign_manito(name):
-    global initial_pairings_used
-    if not initial_pairings_used:
-        if name in initial_manitos:
-            return initial_manitos[name]
-        else:
-            return None
-    else:
-        participants = list(participants_info.keys())
-        participants.remove(name)
-        random.shuffle(participants)
-        return participants[0]
+    participants = list(participants_info.keys())
+    participants.remove(name)
+    random.shuffle(participants)
+    while True:
+        manito = random.choice(participants)
+        if manito != participants_info.get(name):
+            return manito
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global initial_pairings_used
-    
     if request.method == 'POST':
         if 'name' in request.form and 'password' in request.form:
             name = request.form['name']
@@ -90,13 +72,7 @@ def index():
             # 인증 확인
             if name in participants_info and participants_info[name] == password:
                 manito = assign_manito(name)
-                if manito:
-                    # After using initial fixed pairings, switch the flag
-                    initial_pairings_used = True
-                    return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
-                else:
-                    error = '처음 고정된 마니또 할당이 완료되었습니다. 이제는 랜덤으로 추첨됩니다.'
-                    return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
+                return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
             else:
                 error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
                 return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
