@@ -1,21 +1,7 @@
-from flask import Flask, request, render_template_string, redirect, url_for, session
+from flask import Flask, request, render_template_string
 import random
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # 세션을 위한 시크릿 키 설정
-
-# 참가자 정보 (이름: 패스워드)
-participants_info = {
-    "지민재": "121",
-    "윤석환": "122",
-    "박준성": "123",
-    "정예은": "124",
-    "김수민": "125",
-    "정은지": "126"
-}
-
-# 참가자 목록
-participants = list(participants_info.keys())
 
 # HTML 템플릿
 HTML_TEMPLATE = """
@@ -28,30 +14,18 @@ HTML_TEMPLATE = """
   <body>
     <h1>마니또 추첨기</h1>
     <form method="POST">
-      <label for="name">이름:</label><br>
-      <input type="text" id="name" name="name" required><br>
-      <label for="password">패스워드:</label><br>
-      <input type="password" id="password" name="password" required><br><br>
-      <input type="submit" value="확인">
+      <label for="participants">참가자 이름을 쉼표로 구분하여 입력하세요:</label><br>
+      <input type="text" id="participants" name="participants" required><br><br>
+      <input type="submit" value="추첨하기">
     </form>
-    {% if error %}
-    <p style="color: red;">{{ error }}</p>
+    {% if assignments %}
+    <h2>추첨 결과</h2>
+    <ul>
+      {% for giver, receiver in assignments.items() %}
+        <li>{{ giver }}의 마니또는 {{ receiver }}입니다.</li>
+      {% endfor %}
+    </ul>
     {% endif %}
-  </body>
-</html>
-"""
-
-RESULT_TEMPLATE = """
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="utf-8">
-    <title>마니또 결과</title>
-  </head>
-  <body>
-    <h1>마니또 결과</h1>
-    <p>{{ name }}님의 마니또는 {{ manito }}입니다.</p>
-    <a href="{{ url_for('index') }}">다시 확인하기</a>
   </body>
 </html>
 """
@@ -59,35 +33,26 @@ RESULT_TEMPLATE = """
 def assign_manito(participants):
     shuffled = participants[:]
     random.shuffle(shuffled)
+
     manito_assignments = {}
     for i in range(len(participants)):
         while shuffled[i] == participants[i]:
             random.shuffle(shuffled)
         manito_assignments[participants[i]] = shuffled[i]
-    return manito_assignments
 
-assignments = assign_manito(participants)
+    return manito_assignments
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    assignments = None
     if request.method == 'POST':
-        name = request.form['name']
-        password = request.form['password']
-        if name in participants_info and participants_info[name] == password:
-            session['name'] = name
-            return redirect(url_for('result'))
-        else:
-            error = "뻑킹 니 비밀번호 똑바로 입력해."
-            return render_template_string(HTML_TEMPLATE, error=error)
-    return render_template_string(HTML_TEMPLATE, error=None)
+        participants = request.form['participants'].split(',')
+        participants = [p.strip() for p in participants]
+        assignments = assign_manito(participants)
+    return render_template_string(HTML_TEMPLATE, assignments=assignments)
 
-@app.route('/result')
-def result():
-    if 'name' not in session:
-        return redirect(url_for('index'))
-    name = session['name']
-    manito = assignments[name]
-    return render_template_string(RESULT_TEMPLATE, name=name, manito=manito)
+# WSGI 애플리케이션 정의
+app = app
 
 if __name__ == '__main__':
     app.run(debug=True)
