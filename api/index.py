@@ -3,6 +3,21 @@ import random
 
 app = Flask(__name__)
 
+app.secret_key = 'your_secret_key'  # 세션을 위한 시크릿 키 설정
+
+# 참가자 정보 (이름: 패스워드)
+participants_info = {
+    "지민재": "121",
+    "윤석환": "122",
+    "박준성": "123",
+    "정예은": "124",
+    "김수민": "125",
+    "정은지": "126"
+}
+
+# 참가자 목록
+participants = list(participants_info.keys())
+
 # HTML 템플릿
 HTML_TEMPLATE = """
 <!doctype html>
@@ -26,6 +41,21 @@ HTML_TEMPLATE = """
   </body>
 </html>
 """
+
+RESULT_TEMPLATE = """
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <title>마니또 결과</title>
+  </head>
+  <body>
+    <h1>마니또 결과</h1>
+    <p>{{ name }}님의 마니또는 {{ manito }}입니다.</p>
+    <a href="{{ url_for('index') }}">다시 확인하기</a>
+  </body>
+</html>
+"""
 def assign_manito(participants):
     shuffled = participants[:]
     random.shuffle(shuffled)
@@ -35,6 +65,8 @@ def assign_manito(participants):
             random.shuffle(shuffled)
         manito_assignments[participants[i]] = shuffled[i]
     return manito_assignments
+
+assignments = assign_manito(participants)
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
