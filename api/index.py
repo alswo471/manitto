@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template_string
 import random
 
-app = Flask("0.0.0.0")
+app = Flask(__name__)
 
 # HTML 템플릿
 HTML_TEMPLATE = """
@@ -55,4 +55,4 @@ def index():
 app = app
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run("0.0.0.0")
