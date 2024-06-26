@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template_string
 import random
 
-app = Flask(__name__)
+app = Flask("0.0.0.0")
 
 # HTML 템플릿
 HTML_TEMPLATE = """
