@@ -1,7 +1,16 @@
 from flask import Flask, request, render_template_string
 import random
+import sqlite3
 
 app = Flask(__name__)
+
+# SQLite 데이터베이스 초기화
+conn = sqlite3.connect('manito.db', check_same_thread=False)
+cur = conn.cursor()
+
+# 테이블 생성
+cur.execute('''CREATE TABLE IF NOT EXISTS participants
+               (name TEXT PRIMARY KEY, password TEXT, assigned_manito TEXT)''')
 
 # 고정적으로 설정된 참가자 및 패스워드 정보
 participants_info = {
@@ -67,8 +76,17 @@ def index():
 
             # 인증 확인
             if name in participants_info and participants_info[name] == password:
-                manito = assign_manito(name)
-                return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
+                # 이미 추첨된 마니또 확인
+                cur.execute("SELECT assigned_manito FROM participants WHERE name=?", (name,))
+                assigned_manito = cur.fetchone()
+
+                if assigned_manito:
+                    return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=assigned_manito[0])
+                else:
+                    manito = assign_manito(name)
+                    cur.execute("UPDATE participants SET assigned_manito=? WHERE name=?", (manito, name))
+                    conn.commit()
+                    return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
             else:
                 error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
                 return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
