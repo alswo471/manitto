@@ -14,22 +14,18 @@ HTML_TEMPLATE = """
   <body>
     <h1>마니또 추첨기</h1>
     <form method="POST">
-      <label for="participants">참가자 이름을 쉼표로 구분하여 입력하세요:</label><br>
-      <input type="text" id="participants" name="participants" required><br><br>
-      <input type="submit" value="추첨하기">
+      <label for="name">이름:</label><br>
+      <input type="text" id="name" name="name" required><br>
+      <label for="password">패스워드:</label><br>
+      <input type="password" id="password" name="password" required><br><br>
+      <input type="submit" value="확인">
     </form>
-    {% if assignments %}
-    <h2>추첨 결과</h2>
-    <ul>
-      {% for giver, receiver in assignments.items() %}
-        <li>{{ giver }}의 마니또는 {{ receiver }}입니다.</li>
-      {% endfor %}
-    </ul>
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
     {% endif %}
   </body>
 </html>
 """
-
 def assign_manito(participants):
     shuffled = participants[:]
     random.shuffle(shuffled)
@@ -42,12 +38,24 @@ def assign_manito(participants):
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    assignments = None
-    if request.method == 'POST':
-        participants = request.form['participants'].split(',')
-        participants = [p.strip() for p in participants]
-        assignments = assign_manito(participants)
-    return render_template_string(HTML_TEMPLATE, assignments=assignments)
+   if request.method == 'POST':
+        name = request.form['name']
+        password = request.form['password']
+        if name in participants_info and participants_info[name] == password:
+            session['name'] = name
+            return redirect(url_for('result'))
+        else:
+            error = "이름 또는 패스워드가 잘못되었습니다."
+            return render_template_string(HTML_TEMPLATE, error=error)
+    return render_template_string(HTML_TEMPLATE, error=None)
+
+@app.route('/result')
+def result():
+    if 'name' not in session:
+        return redirect(url_for('index'))
+    name = session['name']
+    manito = assignments[name]
+    return render_template_string(RESULT_TEMPLATE, name=name, manito=manito)
 
 if __name__ == '__main__':
     app.run(debug=True)
