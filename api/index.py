@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template_string
+import random
 
 app = Flask(__name__)
 
@@ -13,7 +14,7 @@ participants_info = {
 }
 
 # HTML 템플릿
-HTML_TEMPLATE = """
+HTML_TEMPLATE_AUTHENTICATED = """
 <!doctype html>
 <html lang="ko">
   <head>
@@ -22,21 +23,21 @@ HTML_TEMPLATE = """
   </head>
   <body>
     <h1>마니또 추첨기</h1>
-    {% if authenticated %}
-    <form method="POST">
-      <label for="participants">참가자 이름을 쉼표로 구분하여 입력하세요:</label><br>
-      <input type="text" id="participants" name="participants" required><br><br>
-      <input type="submit" value="추첨하기">
-    </form>
-    {% if assignments %}
-    <h2>추첨 결과</h2>
-    <ul>
-      {% for giver, receiver in assignments.items() %}
-        <li>{{ giver }}의 마니또는 {{ receiver }}입니다.</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-    {% else %}
+    <h2>안녕하세요, {{ name }}님!</h2>
+    <h3>당신의 마니또는 {{ manito }}입니다.</h3>
+  </body>
+</html>
+"""
+
+HTML_TEMPLATE_NOT_AUTHENTICATED = """
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <title>마니또 추첨기</title>
+  </head>
+  <body>
+    <h1>마니또 추첨기</h1>
     <form method="POST">
       <label for="name">이름:</label><br>
       <input type="text" id="name" name="name" required><br><br>
@@ -47,28 +48,18 @@ HTML_TEMPLATE = """
     {% if error %}
     <p style="color: red;">{{ error }}</p>
     {% endif %}
-    {% endif %}
   </body>
 </html>
 """
 
-def assign_manito(participants):
-    import random
-    shuffled = participants[:]
-    random.shuffle(shuffled)
-    manito_assignments = {}
-    for i in range(len(participants)):
-        while shuffled[i] == participants[i]:
-            random.shuffle(shuffled)
-        manito_assignments[participants[i]] = shuffled[i]
-    return manito_assignments
+def assign_manito(name):
+    participants = list(participants_info.keys())
+    participants.remove(name)
+    random.shuffle(participants)
+    return participants[0]
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    authenticated = False
-    error = None
-    assignments = None
-
     if request.method == 'POST':
         if 'name' in request.form and 'password' in request.form:
             name = request.form['name']
@@ -76,16 +67,13 @@ def index():
 
             # 인증 확인
             if name in participants_info and participants_info[name] == password:
-                authenticated = True
+                manito = assign_manito(name)
+                return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
             else:
                 error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
+                return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
 
-        elif 'participants' in request.form:
-            participants = request.form['participants'].split(',')
-            participants = [p.strip() for p in participants]
-            assignments = assign_manito(participants)
-
-    return render_template_string(HTML_TEMPLATE, authenticated=authenticated, error=error, assignments=assignments)
+    return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED)
 
 if __name__ == '__main__':
     app.run(debug=True)
