@@ -1,14 +1,7 @@
 from flask import Flask, request, render_template_string
-from flask_sqlalchemy import SQLAlchemy
 import random
 
 app = Flask(__name__)
-# PostgreSQL 데이터베이스 URI를 환경 변수에서 가져옵니다.
-# Vercel에서 설정한 환경 변수를 사용합니다.
-app.config['SQLALCHEMY_DATABASE_URI'] = 'your_postgres_uri_here'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
 
 # 고정적으로 설정된 참가자 및 패스워드 정보
 participants_info = {
@@ -18,6 +11,16 @@ participants_info = {
     '정예은': '124',
     '김수민': '125',
     '정은지': '126'
+}
+
+# 초기 고정적인 마니또 할당
+initial_manitos = {
+    '지민재': '김수민',
+    '윤석환': '정은지',
+    '박준성': '윤석환',
+    '정예은': '지민재',
+    '김수민': '박준성',
+    '정은지': '윤석환'
 }
 
 # HTML 템플릿
@@ -59,39 +62,26 @@ HTML_TEMPLATE_NOT_AUTHENTICATED = """
 </html>
 """
 
-# 데이터베이스 모델 정의
-class ManitoResult(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    participant_name = db.Column(db.String(50), nullable=False)
-    manito_name = db.Column(db.String(50), nullable=False)
+# 초기 고정된 마니또 할당을 사용했는지 확인하는 플래그
+initial_pairings_used = False
 
-    def __init__(self, participant_name, manito_name):
-        self.participant_name = participant_name
-        self.manito_name = manito_name
-
-# 마니또 추첨 함수
 def assign_manito(name):
-    participants = list(participants_info.keys())
-    participants.remove(name)
-    random.shuffle(participants)
-
-    while True:
-        manito = participants[0]
-        # 데이터베이스에 이미 해당 참가자의 마니또가 있는지 확인
-        existing_result = ManitoResult.query.filter_by(participant_name=name, manito_name=manito).first()
-        if existing_result is None:
-            # 중복이 없으면 결과를 데이터베이스에 저장하고 반환
-            result = ManitoResult(participant_name=name, manito_name=manito)
-            db.session.add(result)
-            db.session.commit()
-            return manito
+    global initial_pairings_used
+    if not initial_pairings_used:
+        if name in initial_manitos:
+            return initial_manitos[name]
         else:
-            # 중복이 있으면 다시 추첨
-            random.shuffle(participants)
+            return None
+    else:
+        participants = list(participants_info.keys())
+        participants.remove(name)
+        random.shuffle(participants)
+        return participants[0]
 
-# Flask 라우트
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    global initial_pairings_used
+    
     if request.method == 'POST':
         if 'name' in request.form and 'password' in request.form:
             name = request.form['name']
@@ -100,7 +90,13 @@ def index():
             # 인증 확인
             if name in participants_info and participants_info[name] == password:
                 manito = assign_manito(name)
-                return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
+                if manito:
+                    # After using initial fixed pairings, switch the flag
+                    initial_pairings_used = True
+                    return render_template_string(HTML_TEMPLATE_AUTHENTICATED, name=name, manito=manito)
+                else:
+                    error = '처음 고정된 마니또 할당이 완료되었습니다. 이제는 랜덤으로 추첨됩니다.'
+                    return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
             else:
                 error = '인증 실패. 이름 또는 패스워드가 올바르지 않습니다.'
                 return render_template_string(HTML_TEMPLATE_NOT_AUTHENTICATED, error=error)
