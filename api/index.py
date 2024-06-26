@@ -56,11 +56,8 @@ HTML_TEMPLATE_NOT_AUTHENTICATED = """
 def assign_manito(name):
     participants = list(participants_info.keys())
     participants.remove(name)
-    random.shuffle(participants)
-    while True:
-        manito = random.choice(participants)
-        if manito != participants_info.get(name):
-            return manito
+    manito_candidates = [p for p in participants if p != participants_info.get(name)]
+    return random.choice(manito_candidates)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
