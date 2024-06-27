@@ -22,20 +22,20 @@ HTML_TEMPLATE_AUTHENTICATED = """
 <html lang="ko">
   <head>
     <meta charset="utf-8">
-    <title>마니또 추첨기</title>
+    <title>마니또띠아 추첨기</title>
   </head>
   <body>
-    <h1>마니또 추첨기</h1>
-    <h2>안녕하세요, {{ name }}님!</h2>
+    <h1>마니또띠아 추첨기</h1>
+    <h2>안녕하지못해요, {{ name }}님!</h2>
     {% if manito %}
-      <h3>당신의 마니또는 {{ manito }}입니다.</h3>
+      <h3>야 니 마니또띠아는 {{ manito }} 야 알겠냐?.</h3>
     {% else %}
       <h3>모든 마니또가 추첨되었습니다.</h3>
     {% endif %}
     <form method="POST" action="/draw">
       <input type="hidden" name="name" value="{{ name }}">
       <input type="hidden" name="password" value="{{ password }}">
-      <input type="submit" value="다시 뽑기">
+      # <input type="submit" value="다시 뽑지마라 절대">
     </form>
   </body>
 </html>
