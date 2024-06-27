@@ -26,9 +26,9 @@ HTML_TEMPLATE_AUTHENTICATED = """
   </head>
   <body>
     <h1>마니또띠아 추첨기</h1>
-    <h2>안녕하지못해요, {{ name }}님!</h2>
+    <h2>뻑 안녕하지못해요, {{ name }}님!</h2>
     {% if manito %}
-      <h3>야 니 마니또띠아는 {{ manito }} 야 알겠냐?.</h3>
+      <h3>야 니 마니또띠아는 {{ manito }} 야 알겠냐? 알겠냐고?.</h3>
     {% else %}
       <h3>모든 마니또가 추첨되었습니다.</h3>
     {% endif %}
